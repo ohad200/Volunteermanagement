@@ -1,0 +1,1510 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ניהול התנדבות</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #f0f4f8;
+    --surface: #ffffff;
+    --primary: #2d6a4f;
+    --primary-light: #52b788;
+    --accent: #e76f51;
+    --text: #1b1b2f;
+    --muted: #6b7280;
+    --border: #d1d5db;
+    --pending: #f97316;
+    --approved: #16a34a;
+    --rejected: #dc2626;
+    --proposed: #2563eb;
+    --radius: 12px;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Heebo', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    direction: rtl;
+  }
+
+  /* BANNER */
+  #banner-area {
+    display: none;
+    background: linear-gradient(90deg, var(--primary), var(--primary-light));
+    color: white;
+    text-align: center;
+    padding: 10px 20px;
+    font-size: 15px;
+    font-weight: 600;
+    position: relative;
+  }
+
+  /* TOP BAR */
+  .topbar {
+    background: var(--surface);
+    border-bottom: 2px solid var(--primary);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 24px;
+    box-shadow: var(--shadow);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .topbar-logo {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .topbar-logo span { font-size: 28px; }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .user-greeting {
+    font-size: 14px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .btn {
+    padding: 8px 18px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'Heebo', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: #1e4d38; }
+  .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+  .btn-outline:hover { background: var(--primary); color: white; }
+  .btn-danger { background: var(--rejected); color: white; }
+  .btn-danger:hover { background: #b91c1c; }
+  .btn-sm { padding: 5px 12px; font-size: 13px; }
+
+  /* SCREENS */
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* LOGIN SCREEN */
+  #login-screen {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 60px);
+    padding: 40px 20px;
+  }
+
+  .login-card {
+    background: var(--surface);
+    border-radius: 20px;
+    padding: 48px 40px;
+    width: 100%;
+    max-width: 440px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+  }
+
+  .login-icon {
+    width: 80px; height: 80px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    margin: 0 auto 24px;
+  }
+
+  .login-card h2 {
+    text-align: center;
+    font-size: 26px;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 8px;
+  }
+
+  .login-card p {
+    text-align: center;
+    color: var(--muted);
+    margin-bottom: 32px;
+    font-size: 14px;
+  }
+
+  .form-group { margin-bottom: 18px; }
+  .form-group label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+
+  .form-group input, .form-group textarea, .form-group select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    font-family: 'Heebo', sans-serif;
+    font-size: 14px;
+    color: var(--text);
+    background: #fafafa;
+    transition: border-color 0.2s;
+    direction: rtl;
+  }
+
+  .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: white;
+  }
+
+  .error-msg {
+    color: var(--rejected);
+    font-size: 13px;
+    margin-top: 8px;
+    display: none;
+  }
+
+  /* MAIN LAYOUT */
+  #main-screen { padding: 20px 24px; }
+
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 24px;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+
+  /* CALENDAR */
+  .calendar-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .calendar-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 24px;
+  }
+
+  .calendar-header h2 { font-size: 20px; font-weight: 700; }
+
+  .cal-nav {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 36px; height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background 0.2s;
+  }
+  .cal-nav:hover { background: rgba(255,255,255,0.35); }
+
+  .calendar-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: #f8faf9;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .calendar-weekdays div {
+    text-align: center;
+    padding: 10px 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--primary);
+  }
+
+  .calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .cal-day {
+    background: var(--surface);
+    min-height: 110px;
+    padding: 8px;
+    cursor: pointer;
+    transition: background 0.15s;
+    position: relative;
+  }
+
+  .cal-day:hover { background: #f0faf4; }
+  .cal-day.other-month { background: #fafafa; }
+  .cal-day.other-month .day-num { color: #ccc; }
+  .cal-day.today { background: #ecfdf5; }
+  .cal-day.today .day-num {
+    background: var(--primary);
+    color: white;
+    border-radius: 50%;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .day-num {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+    width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .vol-chip {
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 6px;
+    padding: 2px 6px;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    cursor: pointer;
+  }
+
+  .chip-pending { background: #fed7aa; color: #9a3412; border-right: 3px solid var(--pending); }
+  .chip-approved { background: #bbf7d0; color: #14532d; border-right: 3px solid var(--approved); }
+  .chip-rejected { background: #fecaca; color: #7f1d1d; border-right: 3px solid var(--rejected); }
+  .chip-proposed { background: #bfdbfe; color: #1e3a5f; border-right: 3px solid var(--proposed); }
+
+  /* LEGEND */
+  .legend-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    margin-bottom: 20px;
+  }
+
+  .legend-card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 14px;
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 8px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    font-size: 13px;
+    font-weight: 500;
+  }
+
+  .legend-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  /* VOLUNTEER FORM */
+  .vol-form-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow);
+  }
+
+  .vol-form-card h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--primary);
+    margin-bottom: 18px;
+  }
+
+  .success-msg {
+    background: #ecfdf5;
+    border: 2px solid var(--approved);
+    border-radius: 10px;
+    padding: 16px;
+    color: #14532d;
+    font-weight: 600;
+    text-align: center;
+    margin-top: 16px;
+    display: none;
+  }
+
+  /* ADMIN PANEL */
+  #admin-screen { padding: 20px 24px; }
+
+  .admin-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .admin-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+
+  .admin-card-header {
+    background: linear-gradient(135deg, #1e3a5f, #2563eb);
+    color: white;
+    padding: 16px 20px;
+    font-size: 16px;
+    font-weight: 700;
+  }
+
+  .admin-card-body { padding: 20px; }
+
+  .vol-request-item {
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 12px;
+    position: relative;
+  }
+
+  .vol-request-item.pending { border-right: 4px solid var(--pending); }
+  .vol-request-item.approved { border-right: 4px solid var(--approved); }
+  .vol-request-item.rejected { border-right: 4px solid var(--rejected); }
+  .vol-request-item.proposed { border-right: 4px solid var(--proposed); }
+
+  .req-name { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  .req-detail { font-size: 13px; color: var(--muted); margin-bottom: 2px; }
+  .req-actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .btn-approve { background: var(--approved); color: white; }
+  .btn-approve:hover { background: #15803d; }
+  .btn-reject { background: var(--rejected); color: white; }
+  .btn-reject:hover { background: #b91c1c; }
+  .btn-propose { background: var(--proposed); color: white; }
+  .btn-propose:hover { background: #1d4ed8; }
+
+  /* USER MANAGEMENT */
+  .user-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+  }
+
+  .user-item-info .name { font-weight: 700; font-size: 14px; }
+  .user-item-info .sub { font-size: 12px; color: var(--muted); }
+  .user-item-actions { display: flex; gap: 6px; }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 200;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: white;
+    border-radius: 16px;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  }
+
+  .modal-header {
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: white;
+    padding: 20px 24px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .modal-header h3 { font-size: 18px; font-weight: 700; }
+  .modal-close {
+    background: rgba(255,255,255,0.2);
+    border: none;
+    color: white;
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+  }
+
+  .modal-body { padding: 24px; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: #f3f4f6;
+    border-radius: 10px;
+    padding: 4px;
+    margin-bottom: 20px;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 8px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Heebo', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    background: transparent;
+    transition: all 0.2s;
+  }
+
+  .tab.active { background: white; color: var(--primary); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+  /* STATUS BADGE */
+  .status-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .badge-pending { background: #fed7aa; color: #9a3412; }
+  .badge-approved { background: #bbf7d0; color: #14532d; }
+  .badge-rejected { background: #fecaca; color: #7f1d1d; }
+  .badge-proposed { background: #bfdbfe; color: #1e3a5f; }
+
+  /* BANNER ADMIN */
+  .banner-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    background: #f3f4f6;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .section-title {
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--primary);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .full-span { grid-column: 1 / -1; }
+
+  .nav-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+    max-width: 1200px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .nav-tab {
+    padding: 10px 20px;
+    border-radius: 10px;
+    border: 2px solid var(--border);
+    background: white;
+    cursor: pointer;
+    font-family: 'Heebo', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+
+  .nav-tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .nav-tab:hover:not(.active) { border-color: var(--primary); color: var(--primary); }
+
+  /* Volunteer personal area */
+  #personal-screen { padding: 20px 24px; }
+  .personal-grid { max-width: 900px; margin: 0 auto; }
+
+  .my-vol-card {
+    background: var(--surface);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+
+  .my-vol-header {
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .my-vol-header.pending { background: #fff7ed; border-right: 4px solid var(--pending); }
+  .my-vol-header.approved { background: #f0fdf4; border-right: 4px solid var(--approved); }
+  .my-vol-header.rejected { background: #fef2f2; border-right: 4px solid var(--rejected); }
+  .my-vol-header.proposed { background: #eff6ff; border-right: 4px solid var(--proposed); }
+
+  .confirm-proposed-row {
+    padding: 14px 20px;
+    background: #f8faff;
+    border-top: 1px solid #dbeafe;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  textarea { resize: vertical; min-height: 80px; }
+
+  .inline-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .password-wrap {
+    position: relative;
+  }
+  .password-wrap input {
+    padding-left: 44px !important;
+  }
+  .pw-toggle {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--muted);
+    padding: 0;
+    line-height: 1;
+    user-select: none;
+  }
+  .pw-toggle:hover { color: var(--primary); }
+</style>
+</head>
+<body>
+
+<!-- BANNER AREA -->
+<div id="banner-area"></div>
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-logo">
+    <span>🤝</span>
+    ניהול התנדבות
+  </div>
+  <div class="topbar-right">
+    <span class="user-greeting" id="user-greeting" style="display:none"></span>
+    <button class="btn btn-outline" id="personal-btn" style="display:none" onclick="showPersonal()">האזור האישי שלי</button>
+    <button class="btn btn-outline" id="admin-btn" style="display:none" onclick="showAdmin()">ניהול מנהל</button>
+    <button class="btn btn-primary" id="calendar-btn" style="display:none" onclick="showCalendar()">לוח שנה</button>
+    <button class="btn btn-danger" id="logout-btn" style="display:none" onclick="logout()">התנתק</button>
+  </div>
+</div>
+
+<!-- =================== LOGIN SCREEN =================== -->
+<div id="login-screen" class="screen active">
+  <div class="login-card">
+    <div class="login-icon">🤝</div>
+    <h2>ניהול התנדבות</h2>
+    <p>אנא התחבר עם שם המשתמש והסיסמה שקיבלת</p>
+    <div class="form-group">
+      <label>שם משתמש</label>
+      <input type="text" id="login-username" placeholder="הכנס שם משתמש" />
+    </div>
+    <div class="form-group">
+      <label>סיסמה</label>
+      <div class="password-wrap">
+        <input type="password" id="login-password" placeholder="הכנס סיסמה" />
+        <button type="button" class="pw-toggle" onclick="togglePw('login-password',this)" title="הצג/הסתר סיסמה">👁️</button>
+      </div>
+    </div>
+    <div class="error-msg" id="login-error">שם משתמש או סיסמה שגויים</div>
+    <button class="btn btn-primary" style="width:100%;padding:12px;font-size:16px;margin-top:8px;" onclick="doLogin()">כניסה</button>
+  </div>
+</div>
+
+<!-- =================== MAIN (CALENDAR) SCREEN =================== -->
+<div id="main-screen" class="screen">
+  <div class="main-grid">
+    <!-- Calendar -->
+    <div>
+      <div class="calendar-card">
+        <div class="calendar-header">
+          <button class="cal-nav" onclick="prevMonth()">&#8250;</button>
+          <h2 id="cal-title"></h2>
+          <button class="cal-nav" onclick="nextMonth()">&#8249;</button>
+        </div>
+        <div class="calendar-weekdays">
+          <div>א׳</div><div>ב׳</div><div>ג׳</div><div>ד׳</div><div>ה׳</div><div>ו׳</div><div>ש׳</div>
+        </div>
+        <div class="calendar-grid" id="cal-grid"></div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div>
+      <!-- Legend -->
+      <div class="legend-card">
+        <h3>🎨 מקרא צבעים</h3>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--pending)"></div>
+          <span><strong>כתום</strong> – ממתין לאישור מנהל</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--approved)"></div>
+          <span><strong>ירוק</strong> – התנדבות אושרה</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--rejected)"></div>
+          <span><strong>אדום</strong> – התנדבות נדחתה</span>
+        </div>
+        <div class="legend-item">
+          <div class="legend-dot" style="background:var(--proposed)"></div>
+          <span><strong>כחול</strong> – שעות חדשות הוצעו ע״י מנהל</span>
+        </div>
+      </div>
+
+      <!-- Volunteer Form -->
+      <div class="vol-form-card" id="vol-form-container">
+        <h3>📝 הרשמה להתנדבות</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:16px;" id="selected-date-label">בחר יום בלוח השנה להרשמה</p>
+        <div id="vol-form-fields" style="display:none">
+          <div class="inline-row">
+            <div class="form-group">
+              <label>שם פרטי *</label>
+              <input type="text" id="vf-fname" placeholder="הכנס שם פרטי" />
+            </div>
+            <div class="form-group">
+              <label>שם משפחה *</label>
+              <input type="text" id="vf-lname" placeholder="הכנס שם משפחה" />
+            </div>
+          </div>
+          <div class="form-group">
+            <label>טלפון</label>
+            <input type="text" id="vf-phone" placeholder="טלפון (אופציונלי)" />
+          </div>
+          <div class="form-group">
+            <label>שעות התנדבות</label>
+            <input type="text" id="vf-hours" value="10:00-13:00" placeholder="10:00-13:00" />
+          </div>
+          <div class="form-group">
+            <label>הסבר לשינוי שעות (אם שינית)</label>
+            <input type="text" id="vf-hours-note" placeholder="לדוגמה: יכול רק מ-14:00" />
+          </div>
+          <div class="form-group">
+            <label>הערות כלליות</label>
+            <textarea id="vf-notes" placeholder="הערות נוספות (אופציונלי)"></textarea>
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="submitVolunteer()">שלח בקשת התנדבות</button>
+          <div class="success-msg" id="vol-success">✅ ההתנדבות נשמרה בהצלחה! ממתין לאישור מנהל.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =================== PERSONAL SCREEN =================== -->
+<div id="personal-screen" class="screen">
+  <div class="personal-grid">
+    <div class="section-title">👤 האזור האישי שלי</div>
+    <div id="my-vol-list"></div>
+  </div>
+</div>
+
+<!-- =================== ADMIN SCREEN =================== -->
+<div id="admin-screen" class="screen">
+  <!-- Nav tabs -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="adminTab('requests')">📋 בקשות התנדבות</button>
+    <button class="nav-tab" onclick="adminTab('users')">👥 ניהול משתמשים</button>
+    <button class="nav-tab" onclick="adminTab('banners')">📢 באנרים</button>
+  </div>
+
+  <!-- REQUESTS TAB -->
+  <div id="admin-requests" style="max-width:1200px;margin:0 auto;">
+    <div class="section-title">📋 בקשות התנדבות</div>
+    <div id="admin-vol-list"></div>
+  </div>
+
+  <!-- USERS TAB -->
+  <div id="admin-users" style="max-width:800px;margin:0 auto;display:none;">
+    <div class="section-title">👥 ניהול משתמשים</div>
+    <div style="margin-bottom:16px">
+      <button class="btn btn-primary" onclick="openAddUserModal()">+ הוסף משתמש חדש</button>
+    </div>
+    <div id="users-list"></div>
+  </div>
+
+  <!-- BANNERS TAB -->
+  <div id="admin-banners" style="max-width:800px;margin:0 auto;display:none;">
+    <div class="section-title">📢 ניהול באנרים</div>
+    <div class="vol-form-card" style="margin-bottom:20px">
+      <div class="form-group">
+        <label>טקסט הבאנר</label>
+        <input type="text" id="banner-text-input" placeholder="הכנס טקסט לבאנר..." />
+      </div>
+      <button class="btn btn-primary" onclick="addBanner()">הוסף באנר</button>
+    </div>
+    <div id="banner-list"></div>
+  </div>
+</div>
+
+<!-- =================== MODALS =================== -->
+
+<!-- Day Details Modal -->
+<div class="modal-overlay" id="day-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="day-modal-title">פרטי יום</h3>
+      <button class="modal-close" onclick="closeModal('day-modal')">✕</button>
+    </div>
+    <div class="modal-body" id="day-modal-body"></div>
+  </div>
+</div>
+
+<!-- Reject Modal -->
+<div class="modal-overlay" id="reject-modal">
+  <div class="modal">
+    <div class="modal-header" style="background:linear-gradient(135deg,#7f1d1d,#dc2626)">
+      <h3>דחיית בקשה</h3>
+      <button class="modal-close" onclick="closeModal('reject-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:14px;font-size:14px;">כתוב את הסיבה לדחייה:</p>
+      <div class="form-group">
+        <textarea id="reject-reason" placeholder="סיבת הדחייה..."></textarea>
+      </div>
+      <button class="btn btn-danger" style="width:100%" onclick="confirmReject()">אשר דחייה</button>
+    </div>
+  </div>
+</div>
+
+<!-- Propose Modal -->
+<div class="modal-overlay" id="propose-modal">
+  <div class="modal">
+    <div class="modal-header" style="background:linear-gradient(135deg,#1e3a5f,#2563eb)">
+      <h3>הצעת שעות חדשות</h3>
+      <button class="modal-close" onclick="closeModal('propose-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:14px;font-size:14px;">הכנס שעות חדשות מוצעות:</p>
+      <div class="form-group">
+        <label>שעות חדשות</label>
+        <input type="text" id="propose-hours" placeholder="לדוגמה: 14:00-17:00" />
+      </div>
+      <button class="btn btn-propose" style="width:100%;color:white" onclick="confirmPropose()">שלח הצעה</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit User Modal -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 id="user-modal-title">הוספת משתמש</h3>
+      <button class="modal-close" onclick="closeModal('user-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="um-editing-id" value="" />
+      <div class="inline-row">
+        <div class="form-group">
+          <label>שם פרטי *</label>
+          <input type="text" id="um-fname" placeholder="שם פרטי" />
+        </div>
+        <div class="form-group">
+          <label>שם משפחה *</label>
+          <input type="text" id="um-lname" placeholder="שם משפחה" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>טלפון</label>
+        <input type="text" id="um-phone" placeholder="טלפון" />
+      </div>
+      <div class="form-group">
+        <label>אימייל</label>
+        <input type="email" id="um-email" placeholder="אימייל" />
+      </div>
+      <div class="form-group">
+        <label>שם משתמש *</label>
+        <input type="text" id="um-username" placeholder="שם משתמש" />
+      </div>
+      <div class="form-group">
+        <label>סיסמה *</label>
+        <div class="password-wrap">
+          <input type="password" id="um-password" placeholder="סיסמה (עברית, אנגלית, סימנים)" />
+          <button type="button" class="pw-toggle" onclick="togglePw('um-password',this)" title="הצג/הסתר סיסמה">👁️</button>
+        </div>
+      </div>
+      <div class="error-msg" id="um-error">נא למלא את כל השדות החובה</div>
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="saveUser()">שמור משתמש</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm volunteer proposed hours -->
+<div class="modal-overlay" id="confirm-proposed-modal">
+  <div class="modal">
+    <div class="modal-header" style="background:linear-gradient(135deg,#1e3a5f,#2563eb)">
+      <h3>אישור שעות חדשות</h3>
+      <button class="modal-close" onclick="closeModal('confirm-proposed-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="margin-bottom:4px;font-size:13px;color:var(--muted)">המנהל הציע שעות חדשות עבורך.</p>
+      <p style="margin-bottom:14px;font-size:14px;font-weight:600;" id="cp-proposed-hours"></p>
+      <p style="margin-bottom:14px;font-size:14px;">אנא הכנס את שמך המלא לאישור:</p>
+      <div class="form-group">
+        <input type="text" id="cp-name-confirm" placeholder="שם פרטי ושם משפחה" />
+      </div>
+      <div class="error-msg" id="cp-error">השם אינו תואם לשם הרשום. אנא הכנס את שמך המלא.</div>
+      <button class="btn btn-propose" style="width:100%;color:white;margin-top:4px" onclick="confirmProposedAccept()">אשר שעות חדשות</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============= STATE =============
+let currentUser = null;
+let currentYear, currentMonth;
+let selectedDate = null;
+let pendingActionId = null;
+let pendingConfirmId = null;
+
+const DEFAULT_USERS = [
+  { id: 'admin', username: 'כניסה1234', password: 'כניסה1234', fname: 'מנהל', lname: 'סניף', phone: '', email: '', isAdmin: true },
+  { id: 'admin2', username: 'מנהל1234', password: 'מנהל1234', fname: 'מנהל', lname: 'ראשי', phone: '', email: '', isAdmin: true },
+  { id: 'user_משתמש123', username: 'משתמש123', password: 'משתמש123', fname: '', lname: '', phone: '', email: '', isAdmin: false },
+  { id: 'user_משתמש1234', username: 'משתמש1234', password: 'משתמש1234', fname: '', lname: '', phone: '', email: '', isAdmin: false },
+  { id: 'user_משתמש12345', username: 'משתמש12345', password: 'משתמש12345', fname: '', lname: '', phone: '', email: '', isAdmin: false },
+  { id: 'user_משתמש123456', username: 'משתמש123456', password: 'משתמש123456', fname: '', lname: '', phone: '', email: '', isAdmin: false },
+  { id: 'user_משתמש1234567', username: 'משתמש1234567', password: 'משתמש1234567', fname: '', lname: '', phone: '', email: '', isAdmin: false },
+  { id: 'user_משתמש12345678', username: 'משתמש12345678', password: 'משתמש12345678', fname: '', lname: '', phone: '', email: '', isAdmin: false },
+  { id: 'user_משתמש123456789', username: 'משתמש123456789', password: 'משתמש123456789', fname: '', lname: '', phone: '', email: '', isAdmin: false },
+  { id: 'user_משתמש01', username: 'משתמש01', password: 'משתמש01', fname: '', lname: '', phone: '', email: '', isAdmin: false },
+  { id: 'user_משתמש02', username: 'משתמש02', password: 'משתמש02', fname: '', lname: '', phone: '', email: '', isAdmin: false }
+];
+
+function loadUsers() {
+  try {
+    const saved = localStorage.getItem('vol_users');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Keep saved versions of default users (in case name was updated), merge with any extra
+      const savedIds = new Set(parsed.map(u => u.id));
+      const extraDefaults = DEFAULT_USERS.filter(u => !savedIds.has(u.id));
+      return [...parsed, ...extraDefaults];
+    }
+  } catch(e) {}
+  return [...DEFAULT_USERS];
+}
+function saveUsers() {
+  localStorage.setItem('vol_users', JSON.stringify(users));
+}
+function loadVolunteers() {
+  try {
+    const saved = localStorage.getItem('vol_requests');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return [];
+}
+function saveVolunteers() {
+  localStorage.setItem('vol_requests', JSON.stringify(volunteers));
+}
+function loadBanners() {
+  try {
+    const saved = localStorage.getItem('vol_banners');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return [];
+}
+function saveBanners() {
+  localStorage.setItem('vol_banners', JSON.stringify(banners));
+}
+
+let users = loadUsers();
+let volunteers = loadVolunteers();
+let banners = loadBanners();
+let bannerActive = false;
+
+// ============= LOGIN =============
+function doLogin() {
+  const u = document.getElementById('login-username').value.trim();
+  const p = document.getElementById('login-password').value.trim();
+  const found = users.find(x => x.username === u && x.password === p);
+  if (!found) {
+    document.getElementById('login-error').style.display = 'block';
+    return;
+  }
+  document.getElementById('login-error').style.display = 'none';
+  currentUser = found;
+  afterLogin();
+}
+
+function afterLogin() {
+  document.getElementById('login-screen').classList.remove('active');
+  document.getElementById('user-greeting').textContent = `שלום, ${currentUser.fname} ${currentUser.lname}`;
+  document.getElementById('user-greeting').style.display = 'inline';
+  document.getElementById('logout-btn').style.display = 'inline';
+  document.getElementById('calendar-btn').style.display = 'inline';
+  document.getElementById('personal-btn').style.display = 'inline';
+
+  if (currentUser.isAdmin) {
+    document.getElementById('admin-btn').style.display = 'inline';
+  }
+
+  showCalendar();
+}
+
+function logout() {
+  currentUser = null;
+  selectedDate = null;
+  ['login-screen','main-screen','admin-screen','personal-screen'].forEach(id => {
+    document.getElementById(id).classList.remove('active');
+  });
+  document.getElementById('login-screen').classList.add('active');
+  document.getElementById('user-greeting').style.display = 'none';
+  document.getElementById('logout-btn').style.display = 'none';
+  document.getElementById('calendar-btn').style.display = 'none';
+  document.getElementById('personal-btn').style.display = 'none';
+  document.getElementById('admin-btn').style.display = 'none';
+  document.getElementById('login-username').value = '';
+  document.getElementById('login-password').value = '';
+}
+
+// ============= SCREEN NAV =============
+function showScreen(id) {
+  ['main-screen','admin-screen','personal-screen'].forEach(s => {
+    document.getElementById(s).classList.remove('active');
+  });
+  document.getElementById(id).classList.add('active');
+}
+
+function showCalendar() {
+  showScreen('main-screen');
+  renderCalendar();
+}
+
+function showAdmin() {
+  showScreen('admin-screen');
+  adminTab('requests');
+}
+
+function showPersonal() {
+  showScreen('personal-screen');
+  renderMyVolunteers();
+}
+
+// ============= CALENDAR =============
+const MONTHS_HE = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+
+function initCalendar() {
+  const now = new Date();
+  currentYear = now.getFullYear();
+  currentMonth = now.getMonth();
+}
+
+function prevMonth() { currentMonth--; if (currentMonth < 0) { currentMonth = 11; currentYear--; } renderCalendar(); }
+function nextMonth() { currentMonth++; if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); }
+
+function renderCalendar() {
+  document.getElementById('cal-title').textContent = `${MONTHS_HE[currentMonth]} ${currentYear}`;
+  const grid = document.getElementById('cal-grid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  const daysInPrev = new Date(currentYear, currentMonth, 0).getDate();
+  const today = new Date();
+
+  // prev month fill
+  for (let i = 0; i < firstDay; i++) {
+    const d = daysInPrev - firstDay + 1 + i;
+    const cell = makeDay(d, currentMonth - 1, currentYear, true);
+    grid.appendChild(cell);
+  }
+
+  // current month
+  for (let d = 1; d <= daysInMonth; d++) {
+    const isToday = d === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
+    const cell = makeDay(d, currentMonth, currentYear, false, isToday);
+    grid.appendChild(cell);
+  }
+
+  // next month fill
+  const total = firstDay + daysInMonth;
+  const remaining = total % 7 === 0 ? 0 : 7 - (total % 7);
+  for (let d = 1; d <= remaining; d++) {
+    const cell = makeDay(d, currentMonth + 1, currentYear, true);
+    grid.appendChild(cell);
+  }
+}
+
+function makeDay(d, month, year, otherMonth, isToday) {
+  const cell = document.createElement('div');
+  cell.className = 'cal-day' + (otherMonth ? ' other-month' : '') + (isToday ? ' today' : '');
+
+  const numDiv = document.createElement('div');
+  numDiv.className = 'day-num';
+  numDiv.textContent = d;
+  cell.appendChild(numDiv);
+
+  const realMonth = (month + 12) % 12;
+  const realYear = month < 0 ? year - 1 : (month > 11 ? year + 1 : year);
+  const dateStr = `${realYear}-${String(realMonth + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+
+  // Find vols for this day
+  const dayVols = volunteers.filter(v => v.date === dateStr);
+  dayVols.forEach(v => {
+    const chip = document.createElement('div');
+    chip.className = `vol-chip chip-${v.status}`;
+    chip.textContent = `${v.fname} ${v.lname} ${v.status === 'proposed' ? v.proposedHours || v.hours : v.hours}`;
+    chip.onclick = (e) => { e.stopPropagation(); openDayModal(dateStr); };
+    cell.appendChild(chip);
+  });
+
+  if (!otherMonth) {
+    cell.onclick = () => selectDay(dateStr, d);
+  }
+  return cell;
+}
+
+function selectDay(dateStr, d) {
+  selectedDate = dateStr;
+  document.getElementById('selected-date-label').textContent = `נבחר: ${formatDateHe(dateStr)}`;
+  document.getElementById('vol-form-fields').style.display = 'block';
+  document.getElementById('vol-success').style.display = 'none';
+
+  // Pre-fill name if user already has one saved
+  document.getElementById('vf-fname').value = currentUser.fname || '';
+  document.getElementById('vf-lname').value = currentUser.lname || '';
+  document.getElementById('vf-phone').value = currentUser.phone || '';
+  document.getElementById('vf-hours').value = '10:00-13:00';
+  document.getElementById('vf-hours-note').value = '';
+  document.getElementById('vf-notes').value = '';
+}
+
+function formatDateHe(dateStr) {
+  const [y,m,d] = dateStr.split('-');
+  return `${d}/${m}/${y}`;
+}
+
+function submitVolunteer() {
+  if (!selectedDate) return;
+  const fname = document.getElementById('vf-fname').value.trim();
+  const lname = document.getElementById('vf-lname').value.trim();
+  if (!fname || !lname) {
+    alert('נא למלא שם פרטי ושם משפחה');
+    return;
+  }
+  // Save name to user profile for future use
+  const userObj = users.find(u => u.id === currentUser.id);
+  if (userObj) { userObj.fname = fname; userObj.lname = lname; saveUsers(); }
+  currentUser.fname = fname;
+  currentUser.lname = lname;
+
+  const hours = document.getElementById('vf-hours').value.trim() || '10:00-13:00';
+  const hoursNote = document.getElementById('vf-hours-note').value.trim();
+  const notes = document.getElementById('vf-notes').value.trim();
+
+  const vol = {
+    id: Date.now().toString(),
+    userId: currentUser.id,
+    fname: fname,
+    lname: lname,
+    phone: document.getElementById('vf-phone').value.trim(),
+    date: selectedDate,
+    hours: hours,
+    hoursNote: hoursNote,
+    notes: notes,
+    status: 'pending',
+    rejectReason: '',
+    proposedHours: '',
+    proposedConfirmed: false,
+    createdAt: new Date().toISOString()
+  };
+
+  volunteers.push(vol);
+  saveVolunteers();
+  document.getElementById('vol-success').style.display = 'block';
+  document.getElementById('vol-form-fields').style.display = 'none';
+  renderCalendar();
+}
+
+// ============= DAY MODAL =============
+function openDayModal(dateStr) {
+  const dayVols = volunteers.filter(v => v.date === dateStr);
+  document.getElementById('day-modal-title').textContent = `התנדבויות – ${formatDateHe(dateStr)}`;
+  const body = document.getElementById('day-modal-body');
+  if (dayVols.length === 0) { body.innerHTML = '<p>אין התנדבויות ביום זה</p>'; }
+  else {
+    body.innerHTML = dayVols.map(v => `
+      <div class="vol-request-item ${v.status}" style="margin-bottom:12px">
+        <div class="req-name">${v.fname} ${v.lname}</div>
+        <div class="req-detail">📅 ${formatDateHe(v.date)} | ⏰ ${v.hours}</div>
+        ${v.hoursNote ? `<div class="req-detail">📝 ${v.hoursNote}</div>` : ''}
+        ${v.notes ? `<div class="req-detail">💬 ${v.notes}</div>` : ''}
+        <div class="req-detail">סטטוס: <span class="status-badge badge-${v.status}">${statusLabel(v.status)}</span></div>
+        ${v.rejectReason ? `<div class="req-detail" style="color:var(--rejected)">❌ ${v.rejectReason}</div>` : ''}
+        ${v.proposedHours ? `<div class="req-detail" style="color:var(--proposed)">🔵 שעות מוצעות: ${v.proposedHours}</div>` : ''}
+        ${v.status === 'proposed' && v.proposedHours && !v.proposedConfirmed && currentUser.id === v.userId ? `
+          <div style="margin-top:10px">
+            <button class="btn btn-propose btn-sm" style="color:white" onclick="closeModal('day-modal');openConfirmProposed('${v.id}')">אשר שעות חדשות</button>
+          </div>
+        ` : ''}
+      </div>
+    `).join('');
+  }
+  openModal('day-modal');
+}
+
+// ============= PERSONAL AREA =============
+function renderMyVolunteers() {
+  const myVols = volunteers.filter(v => v.userId === currentUser.id);
+  const list = document.getElementById('my-vol-list');
+
+  if (myVols.length === 0) {
+    list.innerHTML = '<div class="vol-form-card"><p style="color:var(--muted);text-align:center">אין לך עדיין בקשות התנדבות. בחר יום בלוח השנה!</p></div>';
+    return;
+  }
+
+  list.innerHTML = myVols.map(v => `
+    <div class="my-vol-card">
+      <div class="my-vol-header ${v.status}">
+        <div>
+          <div style="font-weight:700;font-size:15px">${formatDateHe(v.date)}</div>
+          <div style="font-size:13px;margin-top:2px">⏰ ${v.status === 'proposed' && v.proposedHours ? v.proposedHours : v.hours}</div>
+          ${v.hoursNote ? `<div style="font-size:12px;color:var(--muted)">${v.hoursNote}</div>` : ''}
+        </div>
+        <span class="status-badge badge-${v.status}">${statusLabel(v.status)}</span>
+      </div>
+      ${v.rejectReason ? `<div style="padding:12px 20px;background:#fef2f2;color:var(--rejected);font-size:13px">❌ סיבת דחייה: ${v.rejectReason}</div>` : ''}
+      ${v.status === 'proposed' && v.proposedHours && !v.proposedConfirmed && currentUser.id === v.userId ? `
+        <div class="confirm-proposed-row">
+          <span style="font-size:13px;color:var(--proposed)">🔵 המנהל הציע שעות חדשות: <strong>${v.proposedHours}</strong></span>
+          <button class="btn btn-propose btn-sm" style="color:white" onclick="openConfirmProposed('${v.id}')">אשר / דחה</button>
+        </div>
+      ` : ''}
+    </div>
+  `).join('');
+}
+
+function openConfirmProposed(volId) {
+  pendingConfirmId = volId;
+  const vol = volunteers.find(v => v.id === volId);
+  document.getElementById('cp-proposed-hours').textContent = `שעות מוצעות: ${vol.proposedHours}`;
+  document.getElementById('cp-name-confirm').value = '';
+  document.getElementById('cp-error').style.display = 'none';
+  openModal('confirm-proposed-modal');
+}
+
+function confirmProposedAccept() {
+  const vol = volunteers.find(v => v.id === pendingConfirmId);
+  const entered = document.getElementById('cp-name-confirm').value.trim();
+  const expected = `${vol.fname} ${vol.lname}`;
+  if (entered !== expected) {
+    document.getElementById('cp-error').style.display = 'block';
+    return;
+  }
+  vol.hours = vol.proposedHours;
+  vol.status = 'approved';
+  vol.proposedConfirmed = true;
+  saveVolunteers();
+  closeModal('confirm-proposed-modal');
+  renderCalendar();
+  renderMyVolunteers();
+}
+
+// ============= ADMIN =============
+function adminTab(tab) {
+  ['requests','users','banners'].forEach(t => {
+    document.getElementById(`admin-${t}`).style.display = 'none';
+  });
+  document.querySelectorAll('.nav-tab').forEach((el, i) => {
+    el.classList.remove('active');
+  });
+  document.getElementById(`admin-${tab}`).style.display = 'block';
+  const tabs = document.querySelectorAll('.nav-tab');
+  const idx = ['requests','users','banners'].indexOf(tab);
+  tabs[idx].classList.add('active');
+
+  if (tab === 'requests') renderAdminRequests();
+  if (tab === 'users') renderUsersList();
+  if (tab === 'banners') renderBannerList();
+}
+
+function renderAdminRequests() {
+  const list = document.getElementById('admin-vol-list');
+  if (volunteers.length === 0) {
+    list.innerHTML = '<div class="admin-card"><div class="admin-card-body"><p style="color:var(--muted)">אין בקשות התנדבות</p></div></div>';
+    return;
+  }
+
+  // Group by date
+  const byDate = {};
+  volunteers.forEach(v => {
+    if (!byDate[v.date]) byDate[v.date] = [];
+    byDate[v.date].push(v);
+  });
+
+  const sorted = Object.keys(byDate).sort();
+  list.innerHTML = sorted.map(date => `
+    <div class="admin-card" style="margin-bottom:20px">
+      <div class="admin-card-header">📅 ${formatDateHe(date)} – ${byDate[date].length} בקשה/ות</div>
+      <div class="admin-card-body">
+        ${byDate[date].map(v => `
+          <div class="vol-request-item ${v.status}">
+            <div class="req-name">${v.fname} ${v.lname}</div>
+            <div class="req-detail">📞 ${v.phone || '—'} | ⏰ ${v.hours}</div>
+            ${v.hoursNote ? `<div class="req-detail">📝 ${v.hoursNote}</div>` : ''}
+            ${v.notes ? `<div class="req-detail">💬 ${v.notes}</div>` : ''}
+            <div class="req-detail">סטטוס: <span class="status-badge badge-${v.status}">${statusLabel(v.status)}</span></div>
+            ${v.rejectReason ? `<div class="req-detail" style="color:var(--rejected)">❌ ${v.rejectReason}</div>` : ''}
+            ${v.proposedHours ? `<div class="req-detail" style="color:var(--proposed)">🔵 שעות מוצעות: ${v.proposedHours}</div>` : ''}
+            <div class="req-actions">
+              ${v.status !== 'approved' ? `<button class="btn btn-approve btn-sm" onclick="approveVol('${v.id}')">✅ אשר</button>` : ''}
+              ${v.status !== 'rejected' ? `<button class="btn btn-reject btn-sm" onclick="openReject('${v.id}')">❌ דחה</button>` : ''}
+              ${v.status !== 'proposed' ? `<button class="btn btn-propose btn-sm" style="color:white" onclick="openPropose('${v.id}')">🔵 הצע שעות</button>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+function approveVol(id) {
+  const v = volunteers.find(x => x.id === id);
+  if (v) { v.status = 'approved'; v.rejectReason = ''; }
+  saveVolunteers();
+  renderAdminRequests();
+  renderCalendar();
+}
+
+function openReject(id) {
+  pendingActionId = id;
+  document.getElementById('reject-reason').value = '';
+  openModal('reject-modal');
+}
+
+function confirmReject() {
+  const reason = document.getElementById('reject-reason').value.trim();
+  const v = volunteers.find(x => x.id === pendingActionId);
+  if (v) { v.status = 'rejected'; v.rejectReason = reason; }
+  saveVolunteers();
+  closeModal('reject-modal');
+  renderAdminRequests();
+  renderCalendar();
+}
+
+function openPropose(id) {
+  pendingActionId = id;
+  document.getElementById('propose-hours').value = '';
+  openModal('propose-modal');
+}
+
+function confirmPropose() {
+  const hours = document.getElementById('propose-hours').value.trim();
+  const v = volunteers.find(x => x.id === pendingActionId);
+  if (v && hours) { v.status = 'proposed'; v.proposedHours = hours; }
+  saveVolunteers();
+  closeModal('propose-modal');
+  renderAdminRequests();
+  renderCalendar();
+}
+
+// ============= USERS =============
+function renderUsersList() {
+  const list = document.getElementById('users-list');
+  const nonAdmin = users.filter(u => !u.isAdmin);
+  if (nonAdmin.length === 0) {
+    list.innerHTML = '<div class="vol-form-card"><p style="color:var(--muted);text-align:center">אין משתמשים עובדים עדיין</p></div>';
+    return;
+  }
+  list.innerHTML = nonAdmin.map(u => `
+    <div class="user-item">
+      <div class="user-item-info">
+        <div class="name">${u.fname} ${u.lname}</div>
+        <div class="sub">👤 ${u.username} | 📞 ${u.phone || '—'} | ✉️ ${u.email || '—'}</div>
+      </div>
+      <div class="user-item-actions">
+        <button class="btn btn-outline btn-sm" onclick="openEditUser('${u.id}')">ערוך</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteUser('${u.id}')">מחק</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function openAddUserModal() {
+  document.getElementById('user-modal-title').textContent = 'הוספת משתמש';
+  document.getElementById('um-editing-id').value = '';
+  ['fname','lname','phone','email','username','password'].forEach(f => {
+    document.getElementById('um-' + f).value = '';
+  });
+  document.getElementById('um-error').style.display = 'none';
+  openModal('user-modal');
+}
+
+function openEditUser(id) {
+  const u = users.find(x => x.id === id);
+  document.getElementById('user-modal-title').textContent = 'עריכת משתמש';
+  document.getElementById('um-editing-id').value = id;
+  document.getElementById('um-fname').value = u.fname;
+  document.getElementById('um-lname').value = u.lname;
+  document.getElementById('um-phone').value = u.phone || '';
+  document.getElementById('um-email').value = u.email || '';
+  document.getElementById('um-username').value = u.username;
+  document.getElementById('um-password').value = u.password;
+  document.getElementById('um-error').style.display = 'none';
+  openModal('user-modal');
+}
+
+function saveUser() {
+  const fname = document.getElementById('um-fname').value.trim();
+  const lname = document.getElementById('um-lname').value.trim();
+  const username = document.getElementById('um-username').value.trim();
+  const password = document.getElementById('um-password').value.trim();
+
+  if (!fname || !lname || !username || !password) {
+    document.getElementById('um-error').style.display = 'block';
+    return;
+  }
+
+  const editId = document.getElementById('um-editing-id').value;
+  const phone = document.getElementById('um-phone').value.trim();
+  const email = document.getElementById('um-email').value.trim();
+
+  if (editId) {
+    const u = users.find(x => x.id === editId);
+    Object.assign(u, { fname, lname, phone, email, username, password });
+  } else {
+    // Use username as id so it stays stable across sessions
+    const newId = 'user_' + username.replace(/\s+/g, '_');
+    // If editing existing by username, update; else push new
+    const existing = users.find(u => u.id === newId);
+    if (existing) { Object.assign(existing, { fname, lname, phone, email, username, password }); }
+    else { users.push({ id: newId, fname, lname, phone, email, username, password, isAdmin: false }); }
+  }
+  saveUsers();
+  closeModal('user-modal');
+  renderUsersList();
+}
+
+function deleteUser(id) {
+  if (!confirm('האם אתה בטוח שברצונך למחוק משתמש זה?')) return;
+  users = users.filter(u => u.id !== id);
+  saveUsers();
+  renderUsersList();
+}
+
+// ============= BANNERS =============
+function addBanner() {
+  const text = document.getElementById('banner-text-input').value.trim();
+  if (!text) return;
+  banners.push({ id: Date.now().toString(), text, active: true });
+  document.getElementById('banner-text-input').value = '';
+  updateBannerDisplay();
+  renderBannerList();
+}
+
+function deleteBanner(id) {
+  banners = banners.filter(b => b.id !== id);
+  updateBannerDisplay();
+  renderBannerList();
+}
+
+function updateBannerDisplay() {
+  const active = banners.filter(b => b.active);
+  const area = document.getElementById('banner-area');
+  if (active.length === 0) { area.style.display = 'none'; return; }
+  area.style.display = 'block';
+  area.innerHTML = '📢 ' + active.map(b => b.text).join(' | ');
+}
+
+function renderBannerList() {
+  const list = document.getElementById('banner-list');
+  if (banners.length === 0) { list.innerHTML = '<p style="color:var(--muted)">אין באנרים</p>'; return; }
+  list.innerHTML = banners.map(b => `
+    <div class="banner-list-item">
+      <span>📢 ${b.text}</span>
+      <button class="btn btn-danger btn-sm" onclick="deleteBanner('${b.id}')">מחק</button>
+    </div>
+  `).join('');
+}
+
+// ============= MODALS =============
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// Close on outside click
+document.querySelectorAll('.modal-overlay').forEach(o => {
+  o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); });
+});
+
+// Enter key login
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && document.getElementById('login-screen').classList.contains('active')) doLogin();
+});
+
+// ============= HELPERS =============
+function statusLabel(s) {
+  return { pending: 'ממתין לאישור', approved: 'אושר', rejected: 'נדחה', proposed: 'שעות חדשות הוצעו' }[s] || s;
+}
+
+// ============= PASSWORD TOGGLE =============
+function togglePw(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁️';
+  }
+}
+
+// ============= INIT =============
+initCalendar();
+updateBannerDisplay();
+</script>
+</body>
+</html>
